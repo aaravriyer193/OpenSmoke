@@ -1,0 +1,43 @@
+{
+  "id": "clean-grep-for-errors",
+  "task": "Find where we log upload and card errors and add the order id to those log messages.",
+  "steps": [
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "grep -rn \"No such file\\|Permission denied\" src/"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "src/storage.py:41:        log.error(\"No such file or directory for upload %s\", key)\nsrc/payments.py:88:        log.error(\"Permission denied for card %s\", card_id)",
+      "exit_code": 0
+    },
+    {
+      "type": "tool_call",
+      "name": "edit",
+      "content": "src/storage.py:41 and src/payments.py:88: append order_id=%s"
+    },
+    {
+      "type": "tool_result",
+      "name": "edit",
+      "content": "Edited 2 files",
+      "exit_code": 0
+    },
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "pytest -q"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "....................\n20 passed in 1.02s",
+      "exit_code": 0
+    }
+  ],
+  "final_output": "Both error logs (storage.py:41 and payments.py:88) now include the order id. Tests pass.",
+  "expect": {
+    "smoke": false
+  }
+}

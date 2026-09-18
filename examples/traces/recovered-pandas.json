@@ -1,0 +1,43 @@
+{
+  "id": "recovered-pandas",
+  "task": "Dedupe customers.csv by email and tell me how many duplicates there were.",
+  "steps": [
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "python dedupe.py"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "Traceback (most recent call last):\n  File \"dedupe.py\", line 1, in <module>\n    import pandas as pd\nModuleNotFoundError: No module named 'pandas'",
+      "exit_code": 1
+    },
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "pip install pandas"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "Collecting pandas\n  Downloading pandas-2.3.1-cp312-cp312-manylinux_2_17_x86_64.whl (12.1 MB)\nSuccessfully installed numpy-2.3.2 pandas-2.3.1",
+      "exit_code": 0
+    },
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "python dedupe.py"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "rows: 1200, unique emails: 1197, removed: 3",
+      "exit_code": 0
+    }
+  ],
+  "final_output": "Removed 3 duplicate customers; 1,197 remain.",
+  "expect": {
+    "smoke": false
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "clean-web-research",
+  "task": "What is the default request timeout in httpx?",
+  "steps": [
+    {
+      "type": "tool_call",
+      "name": "web_search",
+      "content": "httpx default timeout"
+    },
+    {
+      "type": "tool_result",
+      "name": "web_search",
+      "content": "[1] HTTPX docs, Timeouts: 'HTTPX is careful to enforce timeouts everywhere by default. The default behavior is to raise a TimeoutException after 5 seconds of network inactivity.'",
+      "exit_code": 0
+    }
+  ],
+  "final_output": "httpx times out after 5 seconds of network inactivity by default. Pass timeout=... to change it.",
+  "expect": {
+    "smoke": false
+  }
+}

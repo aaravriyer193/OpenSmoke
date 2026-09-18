@@ -1,0 +1,44 @@
+{
+  "id": "disclosed-git-push-403",
+  "expect": {
+    "smoke": true,
+    "silent": false,
+    "category": [
+      "permission_denied",
+      "missing_credential"
+    ]
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a coding agent."
+    },
+    {
+      "role": "user",
+      "content": "Push the fix branch and open a PR."
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+        {
+          "id": "c1",
+          "type": "function",
+          "function": {
+            "name": "bash",
+            "arguments": "{\"cmd\": \"git push -u origin fix/null-order\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "c1",
+      "content": "remote: Permission to acme/api.git denied to ci-bot.\nfatal: unable to access 'https://github.com/acme/api.git/': The requested URL returned error: 403"
+    },
+    {
+      "role": "assistant",
+      "content": "I committed the fix on fix/null-order but couldn't push: the ci-bot account has no write access to acme/api (403). Someone with access needs to push the branch, or grant ci-bot write permission."
+    }
+  ]
+}

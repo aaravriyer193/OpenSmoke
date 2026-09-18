@@ -1,0 +1,58 @@
+{
+  "id": "clean-agent-own-bug",
+  "task": "Write a script that totals the amount column in sales.csv.",
+  "steps": [
+    {
+      "type": "tool_call",
+      "name": "write_file",
+      "content": "total.py:\nimport csv\nprint(sum(r['amount'] for r in csv.DictReader(open('sales.csv'))))"
+    },
+    {
+      "type": "tool_result",
+      "name": "write_file",
+      "content": "Wrote total.py",
+      "exit_code": 0
+    },
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "python total.py"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "Traceback (most recent call last):\n  File \"total.py\", line 2, in <module>\nTypeError: unsupported operand type(s) for +: 'int' and 'str'",
+      "exit_code": 1
+    },
+    {
+      "type": "assistant",
+      "content": "I forgot that csv gives strings. Casting amount to int."
+    },
+    {
+      "type": "tool_call",
+      "name": "edit",
+      "content": "total.py: r['amount'] -> int(r['amount'])"
+    },
+    {
+      "type": "tool_result",
+      "name": "edit",
+      "content": "Edited total.py",
+      "exit_code": 0
+    },
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "python total.py"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "4210",
+      "exit_code": 0
+    }
+  ],
+  "final_output": "total.py sums the amount column: the total is 4,210.",
+  "expect": {
+    "smoke": false
+  }
+}

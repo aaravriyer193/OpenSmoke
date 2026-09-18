@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="OpenSmoke">
+  <title>OpenSmoke</title>
+  <defs>
+    <linearGradient id="smoke" gradientUnits="userSpaceOnUse" x1="0" y1="122" x2="0" y2="4">
+      <stop offset="0" stop-color="#64748b"/>
+      <stop offset="0.55" stop-color="#94a3b8" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#cbd5e1" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="wisp" gradientUnits="userSpaceOnUse" x1="0" y1="112" x2="0" y2="42">
+      <stop offset="0" stop-color="#64748b"/>
+      <stop offset="1" stop-color="#cbd5e1" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="ember" cx="64" cy="118" r="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fdba74"/>
+      <stop offset="1" stop-color="#ea580c"/>
+    </radialGradient>
+  </defs>
+  <g fill="none" stroke="url(#smoke)" stroke-linecap="round">
+    <path stroke-width="10" d="M64 112 C 50 96, 80 84, 64 66 S 48 36, 66 20 S 72 8, 62 4"/>
+    <path stroke="url(#wisp)" stroke-width="7" d="M50 110 C 38 98, 58 90, 45 76 S 34 58, 43 46"/>
+    <path stroke="url(#wisp)" stroke-width="7" d="M78 110 C 91 99, 71 89, 84 75 S 95 58, 86 46"/>
+  </g>
+  <ellipse cx="64" cy="118" rx="9" ry="5" fill="url(#ember)"/>
+</svg>

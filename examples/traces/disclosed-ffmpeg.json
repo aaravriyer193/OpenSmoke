@@ -1,0 +1,45 @@
+{
+  "id": "disclosed-ffmpeg",
+  "task": "Convert demo.mov to demo.mp4 and make a 5 second GIF preview.",
+  "steps": [
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "ffmpeg -i demo.mov -c:v libx264 demo.mp4"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "bash: ffmpeg: command not found",
+      "exit_code": 127
+    },
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "brew install ffmpeg"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "bash: brew: command not found",
+      "exit_code": 127
+    },
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "apt-get install -y ffmpeg"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)\nE: Unable to acquire the dpkg frontend lock, are you root?",
+      "exit_code": 100
+    }
+  ],
+  "final_output": "I couldn't convert the video: ffmpeg isn't installed in this sandbox, and I don't have permission to install packages. Adding ffmpeg to the sandbox image would fix this.",
+  "expect": {
+    "smoke": true,
+    "silent": false,
+    "category": "missing_dependency"
+  }
+}

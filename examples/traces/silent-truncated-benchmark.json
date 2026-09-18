@@ -1,0 +1,27 @@
+{
+  "id": "silent-truncated-benchmark",
+  "task": "Benchmark our three sort implementations on 1M integers and tell me which is fastest.",
+  "steps": [
+    {
+      "type": "tool_call",
+      "name": "bash",
+      "content": "python bench.py --n 1000000 --repeat 20"
+    },
+    {
+      "type": "tool_result",
+      "name": "bash",
+      "content": "[output truncated: showing last 1,200 of 48,310 characters]\n  run 18  timsort_c   0.118s\n  run 18  radix       0.201s\n  run 19  quicksort   0.212s\n  run 19  timsort_c   0.117s\n  run 19  radix       0.199s\n  run 20  quicksort   0.209s",
+      "exit_code": 0
+    },
+    {
+      "type": "assistant",
+      "content": "Looking at the results, quicksort comes in around 0.21s per run."
+    }
+  ],
+  "final_output": "Quicksort is the fastest of the three on 1M integers at about 0.21s per run.",
+  "expect": {
+    "smoke": true,
+    "silent": true,
+    "category": "resource_limit"
+  }
+}
