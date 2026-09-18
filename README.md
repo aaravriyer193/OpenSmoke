@@ -62,10 +62,9 @@ is the case OpenSmoke is built for: the only evidence was the agent saying so.
 
 ```bash
 uv tool install git+https://github.com/aaravriyer193/OpenSmoke
-export TYPESAFE_API_KEY=...        # https://console.typesafe.ai
-export OPENROUTER_API_KEY=...      # optional: the LLM second opinion
 
-opensmoke scan traces/                          # files, folders, JSONL, or an OpenBoffin .db
+opensmoke scan traces/                          # asks for your keys the first time
+                                                # files, folders, JSONL, or an OpenBoffin .db
 opensmoke scan traces/ --markdown smoke.md --json smoke.json
 opensmoke scan traces/ --webhook $SLACK_WEBHOOK_URL
 opensmoke scan traces/ --fail-on silent         # exit 1 in CI if anything silent got through
@@ -78,6 +77,76 @@ to try the pipeline:
 git clone https://github.com/aaravriyer193/OpenSmoke && cd OpenSmoke
 uv run opensmoke scan examples/traces --judge heuristic --no-diagnose
 ```
+
+## Bring your own keys
+
+OpenSmoke has no server and no account. You pay TypeSafe and your LLM provider
+directly, and your traces go straight from your machine to them.
+
+| Key | Needed for | Get one |
+|---|---|---|
+| TypeSafe | the Jev judge (required unless `--judge heuristic`) | [console.typesafe.ai](https://console.typesafe.ai) |
+| OpenRouter | the LLM second opinion (optional) | [openrouter.ai/keys](https://openrouter.ai/keys) |
+
+The first time you run a scan in a terminal, OpenSmoke asks for any missing key
+with a hidden prompt and offers to save it to `~/.config/opensmoke/keys.env`,
+which only you can read. `opensmoke keys` shows where each key comes from (masked)
+and lets you replace one.
+
+Environment variables always win over the saved file, so CI and secret managers
+work as usual: set `TYPESAFE_API_KEY` and `OPENROUTER_API_KEY`. OpenSmoke never
+prompts when it isn't attached to a terminal, so a scheduled job fails with a clear
+message instead of hanging.
+
+## Using it for real
+
+OpenSmoke reads traces your agents already write. It does not sit in the request
+path, so it cannot slow down or break an agent. Three ways to run it:
+
+**On a schedule (production monitoring).** Export the last hour of runs from
+wherever you log them (your database, Langfuse, LangSmith, OpenTelemetry) to
+JSONL, then scan and alert:
+
+```yaml
+# .github/workflows/opensmoke.yml
+on:
+  schedule: [{cron: "0 * * * *"}]            # hourly
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./export-last-hour.sh > runs.jsonl   # your export: one run per line
+      - run: uvx --from git+https://github.com/aaravriyer193/OpenSmoke opensmoke scan runs.jsonl --webhook "$SLACK_WEBHOOK_URL"
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+The Slack message lists incidents, not runs: *"missing_credential
+`stripe_secret_key`: 40 runs (40 silent)"*, with the fix. The full JSON rides
+along for anything else listening.
+
+**As a gate before a deploy.** Run your agent's eval suite against the new
+sandbox image or config, then `opensmoke scan traces/ --fail-on silent`. A
+missing secret or package fails the build before users meet it.
+
+**From Python**, if your agent already runs in Python:
+
+```python
+import asyncio
+from opensmoke import load, scan
+from opensmoke.judges import JevJudge
+
+report = asyncio.run(scan(load(["runs.jsonl"]), JevJudge()))
+for incident in report.clusters:
+    print(incident.category, incident.fingerprint, len(incident.runs))
+```
+
+What it does not do yet: each scan stands alone, so an incident from the last
+hour is reported again if it is still happening. There is no memory across scans,
+no built-in export from Langfuse or LangSmith, and no `watch` mode that tails a
+directory. Those are the next things to build.
 
 ## How a run is judged
 
@@ -177,9 +246,9 @@ is precision and recall on your own traces, so label a few dozen and run `eval`.
 
 | Variable | Default | |
 |---|---|---|
-| `TYPESAFE_API_KEY` | | Required for `--judge jev` |
+| `TYPESAFE_API_KEY` | | Required for `--judge jev`; prompted for if missing |
 | `TYPESAFE_DEFAULT_MODEL` | `jev-1.13` | Or `--model` |
-| `OPENROUTER_API_KEY` | | Enables diagnosis |
+| `OPENROUTER_API_KEY` | | Enables diagnosis; prompted for if missing |
 | `OPENSMOKE_LLM_API_KEY` | | Overrides the above for another provider |
 | `OPENSMOKE_LLM_BASE_URL` | `https://openrouter.ai/api/v1` | Any OpenAI-compatible endpoint |
 | `OPENSMOKE_LLM_MODEL` | `z-ai/glm-5.2` | Or `--llm-model` |

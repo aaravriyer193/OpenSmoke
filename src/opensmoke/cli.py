@@ -1,15 +1,17 @@
-"""opensmoke scan | eval"""
+"""opensmoke scan | eval | keys"""
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import getpass
+import os
 import sys
 from pathlib import Path
 
 from rich.console import Console
 
-from . import __version__
+from . import __version__, keys
 from .diagnose import Diagnoser, DiagnosisError
 from .evaluate import evaluate
 from .judges import JudgeError, make_judge
@@ -29,6 +31,17 @@ def _common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--concurrency", type=int, default=8)
     p.add_argument("--max-steps", type=int, default=200, help="newest steps judged per run")
     p.add_argument("--runs", help="OpenBoffin run ids, comma separated")
+
+
+def _resolve_keys(args: argparse.Namespace, diagnose: bool) -> None:
+    """Ask for missing keys up front, before any work starts."""
+    if args.judge == "jev" and not keys.ask(keys.TYPESAFE):
+        raise JudgeError(
+            "No TypeSafe key. Run `opensmoke keys`, set TYPESAFE_API_KEY, "
+            "or try the offline baseline with --judge heuristic."
+        )
+    if diagnose and not os.environ.get("OPENSMOKE_LLM_API_KEY"):
+        keys.ask(keys.LLM, optional=True)
 
 
 async def _scan(args: argparse.Namespace, diagnose: bool) -> ScanReport:
@@ -54,6 +67,7 @@ async def _scan(args: argparse.Namespace, diagnose: bool) -> ScanReport:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
+    _resolve_keys(args, diagnose=not args.no_diagnose)
     report = asyncio.run(_scan(args, diagnose=not args.no_diagnose))
     print_report(report, console, verbose=args.verbose)
     if args.json:
@@ -68,7 +82,23 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 1 if any(r.status in fail and not r.dismissed for r in report.results) else 0
 
 
+def cmd_keys(args: argparse.Namespace) -> int:
+    for spec, where in keys.status():
+        console.print(f"  {spec.label:<20} {where}")
+    if not keys.interactive():
+        console.print("[dim]not a terminal; set keys through the environment instead[/]")
+        return 0
+    for spec in keys.ALL:
+        console.print(f"\n[bold]{spec.label}[/] for {spec.required_for}: {spec.url}")
+        value = getpass.getpass("Paste a new key (Enter keeps the current one): ").strip()
+        if value:
+            path = keys.save(spec.env, value)
+            console.print(f"[green]saved[/] to {path} (owner read/write only)")
+    return 0
+
+
 def cmd_eval(args: argparse.Namespace) -> int:
+    _resolve_keys(args, diagnose=args.diagnose)
     report = asyncio.run(_scan(args, diagnose=args.diagnose))
     ev = evaluate(report)
     labeled = ev.tp + ev.fp + ev.fn + ev.tn
@@ -113,7 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("--llm-model", help="diagnosis model")
     e.set_defaults(func=cmd_eval)
 
+    k = sub.add_parser("keys", help="see where your API keys come from, and set them")
+    k.set_defaults(func=cmd_keys)
+
     args = parser.parse_args(argv)
+    keys.load_saved()
     try:
         return args.func(args)
     except JudgeError as e:
